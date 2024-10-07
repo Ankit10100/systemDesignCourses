@@ -75,7 +75,7 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	exitCoordinator = false
 	currentTask = Task{
 		FileName:      files[0],
-		OperationName: REDUCE_TASK,
+		OperationName: NO_TASK,
 		TaskNumber:    0,
 	}
 

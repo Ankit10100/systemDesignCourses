@@ -24,6 +24,7 @@ type Task struct {
 
 const MAP_TASK = 1
 const REDUCE_TASK = 2
+const NO_TASK = 3
 const NREDUCE = 10
 
 type ExampleArgs struct {

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 )
 
 // for sorting by key.
@@ -184,18 +185,24 @@ func Worker(mapf func(string, string) []KeyValue,
 	// uncomment to send the Example RPC to the coordinator.
 	// CallExample()
 
-	task, ok := GetTaskFromCoordinator()
+	for {
 
-	if ok {
-		fmt.Printf("reply.fileName %v\n", task.FileName)
-		switch task.OperationName {
-		case MAP_TASK:
-			handleMapTask(mapf, task)
-		case REDUCE_TASK:
-			handleReduceTask(reducef, task)
+		task, ok := GetTaskFromCoordinator()
+
+		if ok {
+			fmt.Printf("reply.fileName %v\n", task.FileName)
+			switch task.OperationName {
+			case MAP_TASK:
+				handleMapTask(mapf, task)
+			case REDUCE_TASK:
+				handleReduceTask(reducef, task)
+			case NO_TASK:
+				fmt.Printf("Found no task, sleeping\n")
+				time.Sleep(5 * time.Second)
+			}
+		} else {
+			fmt.Printf("call failed! Coordinator might not be running. Exiting.\n")
 		}
-	} else {
-		fmt.Printf("call failed!\n")
 	}
 
 }
