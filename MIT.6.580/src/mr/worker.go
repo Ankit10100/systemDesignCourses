@@ -21,7 +21,7 @@ func (a ByKey) Len() int           { return len(a) }
 func (a ByKey) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByKey) Less(i, j int) bool { return a[i].Key < a[j].Key }
 
-const baseTempDir = "./tempFiles"
+const baseTempDir = "./"
 
 // Map functions return a slice of KeyValue.
 type KeyValue struct {
@@ -40,6 +40,8 @@ func ihash(key string) int {
 func writeToFileAtomically(kvSlice []KeyValue, task Task, reduceBucketNumber int) {
 
 	final_file_name := fmt.Sprintf("%v/MR-%v-%v", baseTempDir, task.TaskNumber, reduceBucketNumber)
+
+	fmt.Println("Writing to file atomically. FinalFileName: ", final_file_name)
 
 	file, err := os.CreateTemp(baseTempDir, "temp-mapdata-")
 
@@ -113,14 +115,15 @@ func handleReduceTask(reducef func(string, []string) string, task Task) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Found and opened the file\n")
+		fmt.Println("Reduce Task File Name: ", fileName)
 		dec := json.NewDecoder(file)
 
 		for {
 			var kvRead KeyValue
 			// fmt.Printf("Inside the for loop\n")
 			if err := dec.Decode(&kvRead); err != nil {
-				fmt.Printf("Encountered Error\n")
+				// fmt.Printf("Encountered Error\n")
+				// println(err)
 				break
 			}
 			intermediate = append(intermediate, kvRead)
@@ -130,7 +133,7 @@ func handleReduceTask(reducef func(string, []string) string, task Task) {
 	}
 	sort.Sort(ByKey(intermediate))
 
-	fmt.Printf("%v", intermediate)
+	// fmt.Printf("%v", intermediate)
 
 	oname := fmt.Sprintf("mr-out-%v", task.TaskNumber)
 	ofile, _ := os.Create(oname)
@@ -176,6 +179,13 @@ func GetTaskFromCoordinator() (Task, bool) {
 	return reply, ok
 }
 
+// RPC call to coordinator
+func markTaskDone(task Task) {
+	finished := true
+
+	call("Coordinator.FinishTask", &task, &finished)
+}
+
 // main/mrworker.go calls this function.
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
@@ -190,12 +200,14 @@ func Worker(mapf func(string, string) []KeyValue,
 		task, ok := GetTaskFromCoordinator()
 
 		if ok {
-			fmt.Printf("reply.fileName %v\n", task.FileName)
+			fmt.Printf("Task Details %v\n", task)
 			switch task.OperationName {
 			case MAP_TASK:
 				handleMapTask(mapf, task)
+				markTaskDone(task)
 			case REDUCE_TASK:
 				handleReduceTask(reducef, task)
+				markTaskDone(task)
 			case NO_TASK:
 				fmt.Printf("Found no task, sleeping\n")
 				time.Sleep(5 * time.Second)
@@ -203,6 +215,7 @@ func Worker(mapf func(string, string) []KeyValue,
 		} else {
 			fmt.Printf("call failed! Coordinator might not be running. Exiting.\n")
 		}
+		// time.Sleep(1 * time.Second)
 	}
 
 }

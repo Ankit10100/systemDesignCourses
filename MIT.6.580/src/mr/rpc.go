@@ -9,6 +9,7 @@ package mr
 import (
 	"os"
 	"strconv"
+	"time"
 )
 
 //
@@ -20,12 +21,15 @@ type Task struct {
 	FileName      string
 	OperationName int
 	TaskNumber    int
+	TaskStartTime time.Time
 }
 
 const MAP_TASK = 1
 const REDUCE_TASK = 2
 const NO_TASK = 3
 const NREDUCE = 10
+
+const WORKER_FAIL_DETECT_TIME_SECONDS = 10
 
 type ExampleArgs struct {
 	X int
